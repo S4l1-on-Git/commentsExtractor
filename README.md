@@ -1,57 +1,85 @@
-# commentsExtractor
+# Comment Extractor
 
-A Python-based web recon tool that extracts hidden comments from HTML, CSS, and JavaScript files of a target web page — useful for bug bounty hunting, CTF challenges, and web application reconnaissance.
+A reconnaissance tool that scrapes and extracts comments from HTML, CSS, and JavaScript files of a target web page. Useful for bug bounty hunting, CTF challenges, and web application penetration testing.
+
+---
 
 ## Features
 
-- Extracts **HTML comments** (`<!-- ... -->`) from the main page
-- Extracts **CSS comments** (`/* ... */`) from all linked stylesheets
-- Extracts **JS comments** (`// ...` and `/* ... */`) from all linked scripts
-- Automatically discovers and fetches external CSS/JS files
-- Uses a realistic Linux User-Agent to avoid basic bot detection
+- Extracts **HTML** comments (`<!-- ... -->`)
+- Extracts **CSS** block comments (`/* ... */`)
+- Extracts **JavaScript** single-line (`// ...`) and block (`/* ... */`) comments
+- Optional **file output** with `-o` flag
+- Custom **User-Agent** header to blend with browser traffic
+
+---
 
 ## Requirements
 
-Install dependencies with:
+Install dependencies via pip:
 
 ```bash
-pip install requests beautifulsoup4 lxml
+pip install -r requirements.txt
 ```
+
+---
 
 ## Usage
 
 ```bash
-python3 commentsExtractor.py <target_url>
+python3 commentsExtractor.py <url> [-o]
 ```
 
-**Example:**
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `<url>`  | Target URL to scan (required) |
+| `-o`     | Save output to `comments.txt` (optional) |
+
+### Examples
 
 ```bash
+# Print comments to terminal
 python3 commentsExtractor.py https://example.com
+
+# Save comments to comments.txt
+python3 commentsExtractor.py https://example.com -o
 ```
 
-## Sample Output
+---
+
+## Output Format
 
 ```
 Found CSS files: 2
-Found JS files: 5
-HTML pages: 1
+Found JS files: 3
 
-HTML Comments (3):
-- <!-- TODO: remove debug endpoint /admin -->
-- <!-- staging build v2.1 -->
+HTML Comments (1):
+  - <!-- TODO: remove debug info -->
 
-CSS Comments (1):
-- /* legacy style - deprecated */
+CSS Comments (2):
+  - /* Main stylesheet v1.2 */
+  - /* Author: dev@example.com */
 
-JS Comments (8):
-- // API key: xxxxxxxxxxxxxxxx
-- /* internal use only */
+JS Comments (4):
+  - // API endpoint: /api/v2/internal
+  - /* Legacy auth handler - disabled */
 ```
 
-## Use Cases
+---
 
-- Web application penetration testing
-- Bug bounty recon phase
-- CTF web challenges
-- OSINT and passive information gathering
+## Recon Tips
+
+Filter output for sensitive keywords:
+
+```bash
+python3 script.py https://example.com -o
+grep -iE 'password|token|secret|api|key|todo|fix|hack|debug|internal|staging' comments.txt
+```
+
+---
+
+## Disclaimer
+
+This tool is intended for **authorized security testing only**. Only use it on targets you have explicit permission to test.
