@@ -28,7 +28,6 @@ base_url = sys.argv[1]
 html = session.get(base_url).text
 soup = BeautifulSoup(html, 'html.parser')
 
-# Find HTML, CSS, JS links (external files)
 html_files = []
 css_files = []
 js_files = []
@@ -40,8 +39,7 @@ for link in soup.find_all('link', rel='stylesheet'):
 for script in soup.find_all('script', src=True):
     js_files.append(urljoin(base_url, script['src']))
 
-# Inline HTML is the main page; add external HTML if any (e.g., iframes rare)
-html_files.append(base_url)  # Main HTML
+html_files.append(base_url)
 
 print("Found CSS files:", len(css_files))
 print("Found JS files:", len(js_files))
@@ -49,7 +47,7 @@ print("HTML pages:", len(html_files))
 
 all_comments = defaultdict(list)
 
-# Extract from main HTML
+# Extract from HTML
 html_comments = extract_html_comments(html)
 all_comments['HTML'].extend(html_comments)
 
@@ -74,5 +72,5 @@ for js_url in js_files:
 # Output
 for file_type, comments in all_comments.items():
     print(f"\n{file_type} Comments ({len(comments)}):")
-    for comment in comments:  # First 10
+    for comment in comments:
         print(f"- {comment}")
