@@ -1,9 +1,10 @@
 import requests
 import re
 from bs4 import BeautifulSoup, Comment
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 import sys
 from collections import defaultdict
+from contextlib import redirect_stdout
 
 def extract_html_comments(html):
     soup = BeautifulSoup(html, 'lxml')
@@ -13,7 +14,6 @@ def extract_css_comments(css_content):
     comments = re.findall(r'/\*.*?\*/', css_content, re.DOTALL)
     return [c.strip() for c in comments if c.strip()]
 
-
 def extract_js_comments(js_content):
     return re.findall(r'(?://[^\n]*|/\*[\s\S]*?\*/)', js_content, re.MULTILINE)
 
@@ -21,14 +21,13 @@ session = requests.Session()
 session.headers.update({"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"})
 
 if len(sys.argv) < 2:
-    print("Usage: python3 script.py <url>")
+    print("Usage: python3 script.py <url> [-o]")
     sys.exit(1)
 
 base_url = sys.argv[1]
 html = session.get(base_url).text
 soup = BeautifulSoup(html, 'html.parser')
 
-html_files = []
 css_files = []
 js_files = []
 
@@ -39,38 +38,42 @@ for link in soup.find_all('link', rel='stylesheet'):
 for script in soup.find_all('script', src=True):
     js_files.append(urljoin(base_url, script['src']))
 
-html_files.append(base_url)
-
 print("Found CSS files:", len(css_files))
 print("Found JS files:", len(js_files))
-print("HTML pages:", len(html_files))
 
 all_comments = defaultdict(list)
 
 # Extract from HTML
-html_comments = extract_html_comments(html)
-all_comments['HTML'].extend(html_comments)
+all_comments['HTML'].extend(extract_html_comments(html))
 
 # Fetch and extract CSS
 for css_url in css_files:
     try:
         css_content = session.get(css_url).text
-        css_comments = extract_css_comments(css_content)
-        all_comments['CSS'].extend(css_comments)
-    except:
-        pass
+        all_comments['CSS'].extend(extract_css_comments(css_content))
+    except Exception as e:
+        print(f"[!] Failed to fetch CSS: {css_url} -> {e}")
 
 # Fetch and extract JS
 for js_url in js_files:
     try:
         js_content = session.get(js_url).text
-        js_comments = extract_js_comments(js_content)
-        all_comments['JS'].extend(js_comments)
-    except:
-        pass
+        all_comments['JS'].extend(extract_js_comments(js_content))
+    except Exception as e:
+        print(f"[!] Failed to fetch JS: {js_url} -> {e}")
+
+def comment_extraction():
+    for file_type, comments in all_comments.items():
+        print(f"\n{file_type} Comments ({len(comments)}):")
+        for comment in comments:
+            print(f"  - {comment}")
 
 # Output
-for file_type, comments in all_comments.items():
-    print(f"\n{file_type} Comments ({len(comments)}):")
-    for comment in comments:
-        print(f"- {comment}")
+if '-o' in sys.argv:
+    output_file = 'comments.txt'
+    with open(output_file, 'w') as f:
+        with redirect_stdout(f):
+            comment_extraction()
+    print(f"[+] Output stored in {output_file}")
+else:
+    comment_extraction()
